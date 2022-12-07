@@ -1,6 +1,5 @@
-const nodemon = require("nodemon")
-const express = require("express")
-const mqtt = require("mqtt")
+import express from "express";
+import { connect } from "mqtt";
 const app = express();
 var options = {
   host: "5ea7583b9e2a4b688fb17bc3928614d8.s2.eu.hivemq.cloud",
@@ -12,7 +11,7 @@ var options = {
 
 const port = process.env.PORT || 3000;
 
- const mqttClient = mqtt.connect(options);
+ const mqttClient = connect(options);
 
 const lastTemp = {
   temp: 99.9,
