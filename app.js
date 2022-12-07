@@ -50,10 +50,20 @@ app.get("/getTemp", (req, res) => {
   }, 2000);
 });
 app.post("/sendCommand", (req, res) => {
-  let data = req.body.data;
+  try{
+    let data = req.body.data;
+  } catch (e) {
+    console.log("Erro ao receber comando! -> " + e);
+    res.send(400)
+  }
+  if (!req.body.data) {
+    res.send(400)
+    console.log("Erro! o body.data é nulo!");
+  }
   console.log("Novo comando recebido! -> " + data);
   mqttClient.publish("projetoAlexa/espIn", data);
   console.log("comando enviado para o MQTT!");
+  res.status(200)
 });
 
 app.listen(port, () => {
