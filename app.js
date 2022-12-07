@@ -15,7 +15,6 @@ const mqttClient = connect(options);
 
 const lastTemp = {
   temp: 99.9,
-  date: new Date(),
   time: new Date(),
 };
 
@@ -30,13 +29,8 @@ mqttClient.subscribe("projetoAlexa/espOut");
 mqttClient.on("message", (topic, msg) => {
   console.log("Nova temperatura recebida -> " + msg.toString());
   lastTemp.temp = msg.toString();
-  lastTemp.time = new Date().toLocaleTimeString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-  });
-  lastTemp.date = new Date().toLocaleDateString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-  });
-  console.log("temperatura registrada -> " + JSON.stringify(lastTemp)+" em "+lastTemp.time +lastTemp.date);
+  lastTemp.time = new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"});
+  console.log("temperatura registrada -> " + lastTemp.temp +" em "+lastTemp.time);
 });
 
 mqttClient.publish("projetoAlexa/espIn", "getTemp");
