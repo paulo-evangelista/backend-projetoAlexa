@@ -1,5 +1,5 @@
-import express from "./node_modules/express";
-import { connect } from "./node_modules/mqtt";
+import express from "./node_modules/";
+import { connect } from "./node_modules/";
 const app = express();
 var options = {
   host: "5ea7583b9e2a4b688fb17bc3928614d8.s2.eu.hivemq.cloud",
