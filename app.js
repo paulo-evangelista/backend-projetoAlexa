@@ -20,10 +20,10 @@ const lastTemp = {
 };
 
 mqttClient.on("connect", () => {
-  console.log("Connected to MQTT broker");
+  console.log("--conectado ao MQTT");
 });
 mqttClient.on("error", (e) => {
-  console.log(e);
+  console.log("ERRO MQQT! -> "+e);
 });
 mqttClient.subscribe("projetoAlexa/espOut");
 
@@ -36,21 +36,24 @@ mqttClient.on("message", (topic, msg) => {
   lastTemp.date = new Date().toLocaleDateString("pt-BR", {
     timeZone: "America/Sao_Paulo",
   });
+  console.log("temperatura registrada -> " + JSON.stringify(lastTemp)+" em "+lastTemp.time +lastTemp.date);
 });
 
 mqttClient.publish("projetoAlexa/espIn", "getTemp");
 
 app.get("/getTemp", (req, res) => {
-  console.log("oie");
+  console.log("Novo pedido de temperatura recebido!");
   mqttClient.publish("projetoAlexa/espIn", "getTemp");
   setTimeout(() => {
     res.status(200).send(JSON.stringify(lastTemp));
+    console.log("Enviando temperatura -> " + JSON.stringify(lastTemp));
   }, 2000);
 });
-app.post("/power", (req, res) => {
+app.post("/sendCommand", (req, res) => {
   let data = req.body.data;
-  console.log(data);
+  console.log("Novo comando recebido! -> " + data);
   mqttClient.publish("projetoAlexa/espIn", data);
+  console.log("comando enviado para o MQTT!");
 });
 
 app.listen(port, () => {
