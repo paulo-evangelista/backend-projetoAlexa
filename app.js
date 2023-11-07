@@ -8,6 +8,7 @@ const app = express();
 
 
 app.get("/", (req, res)=>{
+  console.log("Hello World fetchd")
   res.send("Hello World")
 })
 
