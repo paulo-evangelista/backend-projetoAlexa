@@ -1,4 +1,5 @@
 import express from "express";
+import {writeFile, readFile} from "fs";
 // import { connect } from "mqtt";
 const app = express();
 
@@ -7,9 +8,23 @@ const app = express();
 
 
 
-app.get("/", (req, res)=>{
-  console.log("Hello World fetchd")
-  res.send("Hello World")
+app.get("/write", (req, res)=>{
+  writeFile("data.txt", "a", ()=>{})
+  console.log("wrote")
+  res.send("wrote")
+})
+
+app.get("/check", (req, res)=>{
+  readFile("data.txt", (err, data)=>{
+    if (data.toString()) {
+      writeFile("data.txt", "", ()=>{})
+      console.log("read success")
+      res.send("read sucess")
+    } else {
+      console.log("read error")
+      res.send("read error")
+    }
+  })
 })
 
 
