@@ -5,25 +5,31 @@ const app = express();
 
 
 
-
-
-
-app.get("/write", (req, res)=>{
-  writeFile("data.txt", "a", ()=>{})
-  console.log("wrote")
-  res.send("wrote")
+app.get("/keepalive", (req, res)=>{
+  res.send("ok")
 })
 
-app.get("/check", (req, res)=>{
-  readFile("data.txt", (err, data)=>{
-    if (data.toString()) {
-      writeFile("data.txt", "", ()=>{})
-      console.log("read success")
-      res.send("read sucess")
-    } else {
-      console.log("read error")
-      res.send("read error")
-    }
+
+app.get("/toggleAC", (req, res)=>{
+  readFile("data.json", (err, data)=>{
+    let obj = JSON.parse(data)
+    obj.isAirCondicionerOn = !obj.isAirCondicionerOn
+    writeFile("data.json", JSON.stringify(obj), (err)=>{
+      if(err){
+        console.log(err)
+      } else {
+        console.log("Ar condicionado alterado para: "+obj.isAirCondicionerOn)
+        res.send(obj)
+      }
+    })
+  })
+})
+
+app.get("/getData", (req, res)=>{
+  readFile("data.json", (err, data)=>{
+    let obj = JSON.parse(data)
+    console.log(obj)
+    res.send(obj)
   })
 })
 
