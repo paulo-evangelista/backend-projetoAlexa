@@ -8,13 +8,11 @@ function App() {
   const [ACState, setACState] = useState(null);
 
   useEffect(() => {
-    fetch('https://back-jdb0.onrender.com/getData', {mode: "no-cors"})
+   fetch('https://back-jdb0.onrender.com/getData')
       .then((res) => {
-        return res.json();
-      }).then((res) => {
-        alert(res)
-        // setACState(res.data.isAirCondicionerOn);
-        // setTemperature(res.data.currentTemp);
+        alert(res.data.isAirCondicionerOn)
+        setACState(res.data.isAirCondicionerOn);
+        setTemperature(res.data.currentTemp);
       })
   }, []);
 

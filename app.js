@@ -2,8 +2,9 @@ import express from "express";
 import {writeFile, readFile} from "fs";
 // import { connect } from "mqtt";
 const app = express();
-import CORS from "cors";
+import cors from "cors";
 
+app.use(cors());
 
 app.get("/keepalive", (req, res)=>{
   res.send("ok")
@@ -75,7 +76,6 @@ const port = process.env.PORT || 3000;
   //   time: new Date(),
   // };
   
-  app.use(CORS());
 
 // mqttClient.on("connect", () => {
   //   console.log("--conectado ao MQTT");
