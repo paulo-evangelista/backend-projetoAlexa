@@ -2,7 +2,7 @@ import express from "express";
 import {writeFile, readFile} from "fs";
 // import { connect } from "mqtt";
 const app = express();
-
+import CORS from "cors";
 
 
 app.get("/keepalive", (req, res)=>{
@@ -75,13 +75,7 @@ const port = process.env.PORT || 3000;
   //   time: new Date(),
   // };
   
-  app.use(function (req, res, next) {
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-      res.setHeader("Access-Control-Allow-Credentials", true);
-  next();
-});
+  app.use(CORS());
 
 // mqttClient.on("connect", () => {
   //   console.log("--conectado ao MQTT");
