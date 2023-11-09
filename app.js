@@ -62,13 +62,13 @@ app.get("/createSchedule/:timestamp", (req, res)=>{
 })
 
 app.get("/removeSchedule/:timestamp", (req, res)=>{
-  console.log(parseInt(req.params.temp))
+  console.log("request to remove schedule: "+req.params.timestamp)
 
   readFile("data.json", (err, data)=>{
     let obj = JSON.parse(data)
     for (let i in obj.schedulesArray){
       if (obj.schedulesArray[i] == parseInt(req.params.timestamp)){
-        console.log("removing schedule: "+obj.schedulesArray[i])
+        console.log("schedule exists. removing...")
         obj.schedulesArray.splice(i, 1)
       }
     }
