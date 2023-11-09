@@ -49,6 +49,40 @@ app.get("/sendTemp/:temp", (req, res)=>{
 } )
 })
 
+app.get("/createSchedule/:timestamp", (req, res)=>{
+
+  readFile("data.json", (err, data)=>{
+    let obj = JSON.parse(data)
+    obj.schedulesArray.push(parseInt(req.params.timestamp))
+
+    writeFile("data.json", JSON.stringify(obj), ()=>{
+      console.log("adicionado novo schedule. Array: "+obj.schedulesArray)
+
+        res.send("ok")
+    })
+} )
+})
+
+app.get("/removeSchedule/:timestamp", (req, res)=>{
+  console.log(parseInt(req.params.temp))
+
+  readFile("data.json", (err, data)=>{
+    let obj = JSON.parse(data)
+    for (let i in obj.schedulesArray){
+      if (obj.schedulesArray[i] == parseInt(req.params.timestamp)){
+        console.log("removing schedule: "+obj.schedulesArray[i])
+        obj.schedulesArray.splice(i, 1)
+      }
+    }
+
+    writeFile("data.json", JSON.stringify(obj), ()=>{
+      console.log("Array: "+obj.schedulesArray)
+
+        res.send("ok")
+    })
+} )
+})
+
 
 
 
