@@ -29,21 +29,19 @@ app.get("/toggleAC", (req, res)=>{
 app.get("/getData", (req, res)=>{
   readFile("data.json", (err, data)=>{
     let obj = JSON.parse(data)
-    console.log(obj)
+    console.log("update requested...")
     res.send(obj)
   })
 })
 
 app.get("/sendTemp/:temp", (req, res)=>{
-  console.log(parseInt(req.params.temp))
+  console.log("received temp: "+parseInt(req.params.temp))
 
   readFile("data.json", (err, data)=>{
     let obj = JSON.parse(data)
     obj.currentTemp = parseInt(req.params.temp)
 
     writeFile("data.json", JSON.stringify(obj), ()=>{
-      console.log("Ar condicionado alterado para: "+obj.isAirCondicionerOn)
-
         res.send("ok")
     })
 } )
