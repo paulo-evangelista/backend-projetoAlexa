@@ -37,7 +37,29 @@ def handleAC(localData, remoteData):
             json.dump(localData, json_file, indent=4)
         activateServo(12)
         print("servo activated")
+        return localData
 
     else:
         print("no changes... skipping")
+        return localData
 
+def fetchData():
+    response = requests.get("https://back-jdb0.onrender.com/getData")
+
+    remoteData = response.json()
+    localData = json.load(open('data.json', 'r'))
+    return localData, remoteData
+
+def handleSchedules(remoteData):
+    for i in remoteData["schedulesArray"]:
+        if int(time.time()) > i:
+            print(f"[!!!] local time ({int(time.time())}) is greater than found schedule time ({i})")
+
+            requests.get(f"https://back-jdb0.onrender.com/removeSchedule/{i}")
+            print(f"    -> removed schedule")
+            time.sleep(1)
+
+            requests.get("https://back-jdb0.onrender.com/toggleAC")
+            print(f"    -> toggled AC")
+            time.sleep(1)
+            

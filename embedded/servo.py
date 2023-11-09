@@ -7,14 +7,23 @@ import functions
 
 while True:
     try:
-        response = requests.get("https://back-jdb0.onrender.com/getData")
 
-        remoteData = response.json()
-        localData = json.load(open('data.json', 'r'))
+        localData, remoteData = functions.fetchData()
 
-        functions.handleAC(localData, remoteData)
+        # check if the AC state in the server is the same as the local state.
+        # if not, change the local state and activate the servo
+        localData = functions.handleAC(localData, remoteData)
 
+        # check if there are any schedules to fullfill.
+        # if there are, change the server AC state and remove schedule.
+        # the Servo will only be activated on the next loop, when handleAC() is called.
+        # the schedules are never saved locally.
+        functions.handleSchedules(remoteData)
+        # REMEMBER THAT THE VARIABLE remoteData CAN BECOME OUTDATED AFTER THIS FUNCTION
+
+        # send the temperature to the server
         functions.sendTemperature(sensorPin=25)
+
 
         time.sleep(5)
 
