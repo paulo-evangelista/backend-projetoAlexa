@@ -4,6 +4,8 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Schedules from "./components/Schedules";
 import ScheduleForm from "./components/ScheduleForm";
+import LoadingOverlay from "./components/LoadingOverlay";
+
 function App() {
   const [temperature, setTemperature] = useState("--");
   const [ACState, setACState] = useState(false);
@@ -29,13 +31,14 @@ function App() {
       fetchData();
     });
   };
-
+  
   useEffect(() => {
     fetchData();
   }, []);
-
+  
   return (
     <div className="App">
+      {isUpdating ? <LoadingOverlay/> : null}
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
@@ -98,9 +101,8 @@ function App() {
         >
           Atualizar dados
         </button>
-        <ScheduleForm fetchDataFunction={fetchData} />
-        <Schedules schedulesArray={schedulesArr} />
-        {isUpdating ? <p>Atualizando dados...</p> : null}
+        <ScheduleForm setIsUpdating={setIsUpdating} fetchDataFunction={fetchData} />
+        <Schedules setIsUpdating={setIsUpdating} schedulesArray={schedulesArr} fetchDataFunction={fetchData} />
       </header>
     </div>
   );

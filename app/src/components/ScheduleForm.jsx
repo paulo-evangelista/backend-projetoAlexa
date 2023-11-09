@@ -4,7 +4,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 
-function ScheduleForm({ fetchDataFunction }) {
+function ScheduleForm({ fetchDataFunction, setIsUpdating }) {
   const [startDate, setStartDate] = useState(new Date());
 
   const handleDateChange = (date) => {
@@ -20,7 +20,9 @@ function ScheduleForm({ fetchDataFunction }) {
       // .get(`http://localhost:3000/createSchedule/${timestamp}`)
       .then(() => {
         fetchDataFunction();
-      });
+      })
+      .catch(()=>setIsUpdating(false))
+
   };
 
   return (

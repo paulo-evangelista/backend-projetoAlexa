@@ -36,3 +36,23 @@
     transform: rotate(360deg);
   }
 }
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8); /* Esmaece o fundo */
+  z-index: 9999; /* Certifique-se de que esteja sobre os outros elementos */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  /* Personalize seu spinner ou o texto do carregamento aqui */
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+}
