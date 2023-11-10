@@ -5,6 +5,7 @@ import requests
 import json
 
 def activateServo(servoPwmPin):
+    print("[activateServo] activating servo")
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(servoPwmPin, GPIO.OUT)
     servo = GPIO.PWM(servoPwmPin, 50)
@@ -18,6 +19,7 @@ def activateServo(servoPwmPin):
 
     servo.stop()
     GPIO.cleanup()
+    print("[activateServo] finished")
 
 def sendTemperature(sensorPin):
     _, temp = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, sensorPin);
@@ -26,21 +28,22 @@ def sendTemperature(sensorPin):
     else:
         requests.get(f"https://back-jdb0.onrender.com/sendTemp/{int(temp)}")
 
+    return temp
+
 
 def handleAC(localData, remoteData):
-    print("remote:", remoteData )
-    print("local:", localData )
+    print("[handleAC] remote:", remoteData )
+    print("[handleAC] local:", localData )
 
     if localData["isAirCondicionerOn"] != remoteData["isAirCondicionerOn"]:
         localData['isAirCondicionerOn'] = remoteData['isAirCondicionerOn']
         with open('data.json', 'w') as json_file:
             json.dump(localData, json_file, indent=4)
         activateServo(12)
-        print("servo activated")
         return localData
 
     else:
-        print("no changes... skipping")
+        print("[handleAC] no changes... skipping")
         return localData
 
 def fetchData():
@@ -51,15 +54,16 @@ def fetchData():
     return localData, remoteData
 
 def handleSchedules(remoteData):
+    print("[handleSchedules] local timestamp:", int(time.time()))
     for i in remoteData["schedulesArray"]:
         if int(time.time()) > i:
-            print(f"[!!!] local time ({int(time.time())}) is greater than found schedule time ({i})")
+            print(f"[handleSchedules] local time ({int(time.time())}) is greater than found schedule time ({i})")
 
             requests.get(f"https://back-jdb0.onrender.com/removeSchedule/{i}")
-            print(f"    -> removed schedule")
+            print(f"[handleSchedules]    -> removed schedule")
             time.sleep(1)
 
             requests.get("https://back-jdb0.onrender.com/toggleAC")
-            print(f"    -> toggled AC")
+            print(f"[handleSchedules]    -> toggled AC")
             time.sleep(1)
             

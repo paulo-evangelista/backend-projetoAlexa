@@ -1,9 +1,10 @@
 import time
 import functions
-
+import esp32
 
 while True:
     try:
+        print(" ")
 
         localData, remoteData = functions.fetchData()
 
@@ -19,11 +20,13 @@ while True:
         # REMEMBER THAT THE VARIABLE remoteData CAN BECOME OUTDATED AFTER THIS FUNCTION
 
         # send the temperature to the server
-        functions.sendTemperature(sensorPin=25)
+        temperature = functions.sendTemperature(sensorPin=25)
 
+        esp32.sendTemperature(temperature)
+        esp32.sendDate()
+        esp32.sendTime()
 
-        time.sleep(5)
 
     except Exception as e:
         print(e)
-        time.sleep(10)
+        time.sleep(60)
