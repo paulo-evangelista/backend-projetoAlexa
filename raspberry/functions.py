@@ -70,5 +70,6 @@ def handleSchedules(remoteData):
             
 def handleBuzzer(remoteData):
     if remoteData["buzzer"]:
+        print("[handleBuzzer] activating buzzer")
         esp32.sendSerial("BUZZER-furElise")
         requests.get("https://back-jdb0.onrender.com/removeBuzzer")
