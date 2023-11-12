@@ -3,6 +3,7 @@ import time
 import Adafruit_DHT
 import requests
 import json
+import esp32
 
 def activateServo(servoPwmPin):
     print("[activateServo] activating servo")
@@ -67,3 +68,7 @@ def handleSchedules(remoteData):
             print(f"[handleSchedules]    -> toggled AC")
             time.sleep(1)
             
+def handleBuzzer(remoteData):
+    if remoteData["buzzer"]:
+        esp32.sendSerial("BUZZER-furElise")
+        requests.get("https://back-jdb0.onrender.com/removeBuzzer")

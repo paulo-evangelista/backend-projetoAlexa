@@ -19,6 +19,9 @@ while True:
         functions.handleSchedules(remoteData)
         # REMEMBER THAT THE VARIABLE remoteData CAN BECOME OUTDATED AFTER THIS FUNCTION
 
+        # check if there is a request to activate the buzzer
+        functions.handleBuzzer(remoteData)
+
         # send the temperature to the server
         temperature = functions.sendTemperature(sensorPin=25)
 

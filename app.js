@@ -81,6 +81,34 @@ app.get("/removeSchedule/:timestamp", (req, res)=>{
 } )
 })
 
+app.get("/createBuzzer", (req, res)=>{
+
+  readFile("data.json", (err, data)=>{
+    let obj = JSON.parse(data)
+    obj.buzzer = true
+
+    writeFile("data.json", JSON.stringify(obj), ()=>{
+      console.log("buzzer solicitado.")
+
+        res.send("ok")
+    })
+} )
+})
+
+app.get("/removeBuzzer", (req, res)=>{
+
+  readFile("data.json", (err, data)=>{
+    let obj = JSON.parse(data)
+    obj.buzzer = false
+
+    writeFile("data.json", JSON.stringify(obj), ()=>{
+      console.log("buzzer removido.")
+
+        res.send("ok")
+    })
+} )
+})
+
 
 
 
