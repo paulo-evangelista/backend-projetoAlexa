@@ -5,12 +5,15 @@ import { useEffect, useState } from "react";
 import Schedules from "./components/Schedules";
 import ScheduleForm from "./components/ScheduleForm";
 import LoadingOverlay from "./components/LoadingOverlay";
+import {LocalNotifications} from "@capacitor/local-notifications"
 
 function App() {
   const [temperature, setTemperature] = useState("--");
   const [ACState, setACState] = useState(false);
   const [schedulesArr, setSchedulesArr] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
+
+
 
   const fetchData = async () => {
     setIsUpdating(true);
@@ -31,14 +34,31 @@ function App() {
       fetchData();
     });
   };
-  
-  useEffect(() => {
+
+  const toggleBuzzer = async () => {
+    setIsUpdating(true);
+    await axios.get("https://back-jdb0.onrender.com/createBuzzer")
+    setIsUpdating(false);
+  }
+
+  useEffect(async () => {
+    const res = await LocalNotifications.checkPermissions()
+    if(res.display != 'granted'){
+      await LocalNotifications.requestPermissions()
+      await LocalNotifications.createChannel({
+        id: "default",
+        name: "High Priority Channel",
+        description: "Canal para notificações importantes",
+        importance: 5, // Máxima importância para notificações heads-up
+        visibility: 1, // Visibilidade pública
+    });
+    }
     fetchData();
   }, []);
-  
+
   return (
     <div className="App">
-      {isUpdating ? <LoadingOverlay/> : null}
+      {isUpdating ? <LoadingOverlay /> : null}
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
@@ -86,6 +106,38 @@ function App() {
           </button>
         )}
         <button
+        onClick={toggleBuzzer}
+          style={{
+            display: "flex",
+            borderRadius: "12px",
+            marginTop: "30px",
+            marginBottom: "10px",
+            border: "0",
+            fontWeight: "",
+            fontSize: "20px",
+            padding: "5px 12px",
+            backgroundColor: "#228be0",
+            color: "white",
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-bell"
+          >
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+          </svg>
+          Tocar campainha
+        </button>
+        <button
           onClick={fetchData}
           style={{
             borderRadius: "12px",
@@ -101,8 +153,15 @@ function App() {
         >
           Atualizar dados
         </button>
-        <ScheduleForm setIsUpdating={setIsUpdating} fetchDataFunction={fetchData} />
-        <Schedules setIsUpdating={setIsUpdating} schedulesArray={schedulesArr} fetchDataFunction={fetchData} />
+        <ScheduleForm
+          setIsUpdating={setIsUpdating}
+          fetchDataFunction={fetchData}
+        />
+        <Schedules
+          setIsUpdating={setIsUpdating}
+          schedulesArray={schedulesArr}
+          fetchDataFunction={fetchData}
+        />
       </header>
     </div>
   );
