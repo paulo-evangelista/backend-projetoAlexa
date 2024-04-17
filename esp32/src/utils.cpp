@@ -34,6 +34,6 @@ void displayLine()
 {
   oled.setScale(1);
   oled.setCursor(0, 4);
-  oled.print("---------------------------------------------------");
+  oled.print("------aaaaaaaaa-----------------");
   oled.update();
 }

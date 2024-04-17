@@ -1,15 +1,23 @@
 #include <Arduino.h>
 #include <GyverOLED.h>
+#include <ArduinoWebsockets.h>
+#include <WiFi.h>
+
 #include "utils.h"
 #include "buzzer.h"
 
-GyverOLED<SSH1106_128x64> oled;
+const char *ssid = "SHARE-RESIDENTE";                        // Substitua com o SSID da sua rede WiFi
+const char *password = "Share@residente23";                  // Substitua com a senha da sua rede WiFi
+const char *websocket_server = "ws://seu-servidor.com:8080"; // Substitua com o endereço do seu servidor WebSocket
 
-void setup()
+using namespace websockets;
+
+GyverOLED<SSH1106_128x64> oled;
+WebsocketsClient client;
+
+void setupBasics()
 {
   Serial.begin(9600);
-  oled.init();
-  oled.autoPrintln(false);
   pinMode(12, OUTPUT);
   // LED RGB
   pinMode(17, OUTPUT);
@@ -18,10 +26,17 @@ void setup()
   digitalWrite(18, HIGH);
   digitalWrite(17, HIGH);
   digitalWrite(19, HIGH);
-
-  displayLine();
 }
 
+void setup()
+{
+  setupBasics();
+  oled.init();
+  oled.autoPrintln(false);
+
+  displayLine();
+  client.connect("ws://your-server-ip:port/uri");
+}
 
 void loop()
 
@@ -50,9 +65,9 @@ void loop()
       displayTime(value);
     }
 
-    else if (command == "BUZZER"){
+    else if (command == "BUZZER")
+    {
       buzzer_furElise();
     }
-
   }
 }
