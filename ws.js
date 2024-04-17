@@ -1,9 +1,9 @@
 import WebSocket, { WebSocketServer } from "ws";
 import { readFile, writeFile } from "fs";
-import { DEFAULT_CIPHERS } from "tls";
 
 // Inicializa um servidor WebSocket na porta 8080
-const wss = new WebSocketServer({ port: 8080 });
+console.log("running on port: ", process.env.PORT || 8080);
+const wss = new WebSocketServer({ port: process.env.PORT || 8080 });
 
 wss.on("connection", function connection(ws) {
   console.log("Cliente conectado");
