@@ -5,7 +5,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import { LocalNotifications } from "@capacitor/local-notifications";
 
-function ScheduleForm({ fetchDataFunction, setIsUpdating }) {
+function ScheduleForm({ schedulesArray, sendNewScheduleFunction }) {
   const [startDate, setStartDate] = useState(new Date());
 
   const handleDateChange = (date) => {
@@ -13,7 +13,7 @@ function ScheduleForm({ fetchDataFunction, setIsUpdating }) {
   };
 
   const scheduleNotification = async (timestamp) => {
-   await LocalNotifications.schedule({
+    await LocalNotifications.schedule({
       notifications: [
         {
           title: "❄️ Ar-condicionado ❄️",
@@ -22,7 +22,7 @@ function ScheduleForm({ fetchDataFunction, setIsUpdating }) {
           iconColor: "#9015b6",
           schedule: { at: new Date(timestamp * 1000) },
           actionTypeId: "",
-          channelId: "default"
+          channelId: "default",
         },
       ],
     });
@@ -30,16 +30,9 @@ function ScheduleForm({ fetchDataFunction, setIsUpdating }) {
 
   const handleSubmit = () => {
     const timestamp = Math.floor(startDate.getTime() / 1000);
-    // Agora, envie o timestamp para o servidor
-    console.log(timestamp);
-    axios
-      .get(`https://back-jdb0.onrender.com/createSchedule/${timestamp}`)
-      // .get(`http://localhost:3000/createSchedule/${timestamp}`)
-      .then(async () => {
-        await scheduleNotification(timestamp);
-        fetchDataFunction();
-      })
-      .catch(() => setIsUpdating(false));
+    console.log(timestamp)
+    scheduleNotification(timestamp)
+    sendNewScheduleFunction(timestamp)
   };
 
   return (
@@ -55,7 +48,6 @@ function ScheduleForm({ fetchDataFunction, setIsUpdating }) {
         onChange={handleDateChange}
         showTimeSelect
         dateFormat="Pp"
-        locale="pt-br"
         showIcon
       />
       <br />

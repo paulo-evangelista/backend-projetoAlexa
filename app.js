@@ -6,7 +6,6 @@ console.log("running on port: ", process.env.PORT || 8080);
 const wss = new WebSocketServer({ port: process.env.PORT || 8080 });
 
 wss.on("connection", function connection(ws) {
-
   // Recebe mensagens do cliente
   ws.on("message", function incoming(message) {
     const cases = message.toString().slice(0, 6);
@@ -46,24 +45,21 @@ wss.on("connection", function connection(ws) {
         createScheduleBySeconds(parseInt(message.slice(7)));
         ws.send(
           "schedule created for: " +
-            (Math.floor(Date.now()/1000) + parseInt(message.slice(7))))
+            (Math.floor(Date.now() / 1000) + parseInt(message.slice(7)))
+        );
         break;
 
-        case "SETSCT":
-          createScheduleByTimestamp(parseInt(message.slice(7)));
-          ws.send(
-            "schedule created for: " +
-              (Math.floor(Date.now()/1000) + parseInt(message.slice(7))))
-          break;
-
-      
+      case "SETSCT":
+        createScheduleByTimestamp(parseInt(message.slice(7)));
+        ws.send("schedule created for: " + parseInt(message.slice(7)));
+        break;
 
       case "SETBUZ":
         toggleBuzzer();
         break;
 
-        default:
-            console.log("Invalida command:" + message);
+      default:
+        console.log("Invalida command:" + message);
     }
   });
 
@@ -92,18 +88,19 @@ const createScheduleBySeconds = (seconds) => {
     const obj = JSON.parse(data);
     obj.schedulesArray.push(Math.floor(Date.now() / 1000) + seconds);
     updateJsonFile(obj);
-
   });
 };
 
 const createScheduleByTimestamp = (timestamp) => {
   // assure we have a timestamp of seconds, not miliseconds
   if (timestamp > 17134083450) {
-  console.error("Invalid timestamp, looks like its in miliseconds, not seconds")
-  return;
+    console.error(
+      "Invalid timestamp, looks like its in miliseconds, not seconds"
+    );
+    return;
   }
   if (timestamp < Math.floor(Date.now() / 1000)) {
-    console.error("Invalid timestamp, it's in the past")
+    console.error("Invalid timestamp, it's in the past");
     return;
   }
 
@@ -111,7 +108,6 @@ const createScheduleByTimestamp = (timestamp) => {
     const obj = JSON.parse(data);
     obj.schedulesArray.push(timestamp);
     updateJsonFile(obj);
-
   });
 };
 

@@ -12,7 +12,6 @@ function App() {
   const [ACState, setACState] = useState(false);
   const [schedulesArr, setSchedulesArr] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [lastEspUpdate, setLastEspUpdate] = useState(Date.now());
   const [lastEspUpdateString, setLastEspUpdateString] = useState("--");
   const ws = useRef(null);
 
@@ -30,36 +29,59 @@ function App() {
     }
   };
 
-  const toggleACState = () =>{
+  const toggleACState = () => {
     try {
-      if(ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send("SETAC");
-      setACState(!ACState);
+      if (ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send("SETAC");
+        setACState(!ACState);
       }
     } catch (error) {
       console.log("erro");
     }
-  }
+  };
 
   const fetchData = () => {
     setInterval(() => {
+      console.log("atualizando");
       try {
-        if(ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send("GET");
+        if (ws.current.readyState === WebSocket.OPEN) {
+          ws.current.send("GET");
         }
       } catch (error) {
         console.log("erro");
       }
-    }, 10000);
+    }, 5000);
   };
 
+  const sendNewSchedule = (timestamp) => {
+    try {
+      if (ws.current.readyState === WebSocket.OPEN) {
+        if (timestamp > 17134112910) {
+          console.log(
+            "Invalid timestamp, looks like its in miliseconds, not seconds"
+          );
+          return;
+        }
+        ws.current.send(`SETSCT:${timestamp}`);
+        setSchedulesArr([...schedulesArr, timestamp]);
+      }
+    } catch (error) {
+      console.log("erro");
+    }
+  };
 
-  useEffect(()=>{
-    let timeDistante = Math.floor(Date.now()/1000) - lastEspUpdate;
+  const makeLastEspUpdateString = (lastEspUpdate) => {
+    let timeDistante = Math.floor(Date.now() / 1000) - lastEspUpdate;
     if (timeDistante < 60) {
       setLastEspUpdateString(`Agora (${timeDistante}s)`);
+    } else if (timeDistante < 3600) {
+      setLastEspUpdateString(`${Math.floor(timeDistante / 60)} minutos atrás`);
+    } else if (timeDistante < 86400) {
+      setLastEspUpdateString(`${Math.floor(timeDistante / 3600)} horas atrás`);
+    } else {
+      setLastEspUpdateString(`${Math.floor(timeDistante / 86400)} dias atrás`);
     }
-  }, [lastEspUpdate])
+  };
 
   useEffect(() => {
     fetchData();
@@ -68,21 +90,23 @@ function App() {
     ws.current = new WebSocket("wss://back-jdb0.onrender.com/");
     ws.current.onopen = () => {
       console.log("WebSocket opened");
+      ws.current.send("GET");
       setIsUpdating(false);
     };
     ws.current.onclose = () => {
       setIsUpdating(true);
-    }
+    };
     ws.current.onmessage = (message) => {
       try {
         const data = JSON.parse(message.data);
-          setACState(data.isAirCondicionerOn);
-          setLastEspUpdate(data.lastEspUpdate);
+        setACState(data.isAirCondicionerOn);
+        makeLastEspUpdateString(data.lastEspUpdate);
+        setSchedulesArr(data.schedulesArray);
       } catch (error) {}
     };
     return () => {
       ws.current.close();
-    }
+    };
   }, []);
 
   return (
@@ -168,18 +192,14 @@ function App() {
         </button>
         <p>
           Última atualização do ESP:
-          <br/>
-            {lastEspUpdateString}
+          <br />
+          {lastEspUpdateString}
         </p>
         <ScheduleForm
-          setIsUpdating={setIsUpdating}
-          fetchDataFunction={() => {}}
-        />
-        <Schedules
-          setIsUpdating={setIsUpdating}
           schedulesArray={schedulesArr}
-          fetchDataFunction={() => {}}
+          sendNewScheduleFunction={sendNewSchedule}
         />
+        <Schedules schedulesArray={schedulesArr} />
       </header>
     </div>
   );
