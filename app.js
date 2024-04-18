@@ -1,136 +1,174 @@
-import express from "express";
-import {writeFile, readFile} from "fs";
-// import { connect } from "mqtt";
-const app = express();
-import cors from "cors";
-import WebSocket, { WebSocketServer } from 'ws';
+import WebSocket, { WebSocketServer } from "ws";
+import { readFile, writeFile } from "fs";
 
 // Inicializa um servidor WebSocket na porta 8080
-const wss = new WebSocketServer({ port: 8080 });
+console.log("running on port: ", process.env.PORT || 8080);
+const wss = new WebSocketServer({ port: process.env.PORT || 8080 });
 
-wss.on('connection', function connection(ws) {
-  console.log('Cliente conectado');
+wss.on("connection", function connection(ws) {
 
   // Recebe mensagens do cliente
-  ws.on('message', function incoming(message) {
-    console.log('Recebido: %s', message);
+  ws.on("message", function incoming(message) {
+    const cases = message.toString().slice(0, 6);
+    switch (cases) {
+      // Quando o aplicativo pede os dados
+      case "GET":
+        readFile("data.json", (err, data) => {
+          handleGet(JSON.parse(data), ws);
+        });
+        break;
+
+      case "ESPGET":
+        readFile("data.json", (err, data) => {
+          handleEspGet(JSON.parse(data), ws);
+        });
+        break;
+
+      // Quando o ESP manda a temperatura atual
+      // Formato: SETTMP-xx (temperatura atual)
+      case "SETTMP":
+        console.log("received temp: " + parseInt(message.slice(7)));
+        updateTemperature(parseInt(message.slice(7)));
+        ws.send(`setted temperature: ${parseInt(message.slice(7))}`);
+        break;
+
+      // Quando o ESP mudou o estado do ar condicionado
+      // Formato: SETAC (sem parametros)
+      case "SETAC":
+        console.log("Ar condicionado alterado");
+        updateAC();
+        ws.send("alterado");
+        break;
+
+      // Quando o ESP seta um horario para mudar o estado do ar condicionado
+      // Formato: SETSCH-xxxxxxxx (quantidade de segundos até a mudança)
+      case "SETSCS":
+        createScheduleBySeconds(parseInt(message.slice(7)));
+        ws.send(
+          "schedule created for: " +
+            (Math.floor(Date.now()/1000) + parseInt(message.slice(7))))
+        break;
+
+        case "SETSCT":
+          createScheduleByTimestamp(parseInt(message.slice(7)));
+          ws.send(
+            "schedule created for: " +
+              (Math.floor(Date.now()/1000) + parseInt(message.slice(7))))
+          break;
+
+      
+
+      case "SETBUZ":
+        toggleBuzzer();
+        break;
+
+        default:
+            console.log("Invalida command:" + message);
+    }
   });
 
   // Envia uma mensagem para o cliente
-  ws.send('Conexão estabelecida com sucesso!');
+  ws.send("success");
 });
 
-app.use(cors());
-
-app.get("/keepalive", (req, res)=>{
-  res.send("ok")
-})
-
-
-app.get("/toggleAC", (req, res)=>{
-  readFile("data.json", (err, data)=>{
-    let obj = JSON.parse(data)
-    obj.isAirCondicionerOn = !obj.isAirCondicionerOn
-    writeFile("data.json", JSON.stringify(obj), (err)=>{
-      if(err){
-        console.log(err)
-      } else {
-        console.log("Ar condicionado alterado para: "+obj.isAirCondicionerOn)
-        res.send(obj)
-      }
-    })
-  })
-})
-
-app.get("/getData", (req, res)=>{
-  readFile("data.json", (err, data)=>{
-    let obj = JSON.parse(data)
-    console.log("update requested...")
-    res.send(obj)
-  })
-})
-
-app.get("/sendTemp/:temp", (req, res)=>{
-  console.log("received temp: "+parseInt(req.params.temp))
-
-  readFile("data.json", (err, data)=>{
-    let obj = JSON.parse(data)
-    obj.currentTemp = parseInt(req.params.temp)
-
-    writeFile("data.json", JSON.stringify(obj), ()=>{
-        res.send("ok")
-    })
-} )
-})
-
-app.get("/createSchedule/:timestamp", (req, res)=>{
-
-  readFile("data.json", (err, data)=>{
-    let obj = JSON.parse(data)
-    obj.schedulesArray.push(parseInt(req.params.timestamp))
-
-    writeFile("data.json", JSON.stringify(obj), ()=>{
-      console.log("adicionado novo schedule. Array: "+obj.schedulesArray)
-
-        res.send("ok")
-    })
-} )
-})
-
-app.get("/removeSchedule/:timestamp", (req, res)=>{
-  console.log("request to remove schedule: "+req.params.timestamp)
-
-  readFile("data.json", (err, data)=>{
-    let obj = JSON.parse(data)
-    for (let i in obj.schedulesArray){
-      if (obj.schedulesArray[i] == parseInt(req.params.timestamp)){
-        console.log("schedule exists. removing...")
-        obj.schedulesArray.splice(i, 1)
-      }
+const updateJsonFile = (obj) => {
+  writeFile("data.json", JSON.stringify(obj), (err) => {
+    if (err) {
+      console.log(err);
     }
+  });
+};
 
-    writeFile("data.json", JSON.stringify(obj), ()=>{
-      console.log("Array: "+obj.schedulesArray)
+const updateAC = () => {
+  readFile("data.json", (err, data) => {
+    const obj = JSON.parse(data);
+    obj.isAirCondicionerOn = !obj.isAirCondicionerOn;
+    updateJsonFile(obj);
+  });
+};
 
-        res.send("ok")
-    })
-} )
-})
+const createScheduleBySeconds = (seconds) => {
+  readFile("data.json", (err, data) => {
+    const obj = JSON.parse(data);
+    obj.schedulesArray.push(Math.floor(Date.now() / 1000) + seconds);
+    updateJsonFile(obj);
 
-app.get("/createBuzzer", (req, res)=>{
+  });
+};
 
-  readFile("data.json", (err, data)=>{
-    let obj = JSON.parse(data)
-    obj.buzzer = true
+const createScheduleByTimestamp = (timestamp) => {
+  // assure we have a timestamp of seconds, not miliseconds
+  if (timestamp > 17134083450) {
+  console.error("Invalid timestamp, looks like its in miliseconds, not seconds")
+  return;
+  }
+  if (timestamp < Math.floor(Date.now() / 1000)) {
+    console.error("Invalid timestamp, it's in the past")
+    return;
+  }
 
-    writeFile("data.json", JSON.stringify(obj), ()=>{
-      console.log("buzzer solicitado.")
+  readFile("data.json", (err, data) => {
+    const obj = JSON.parse(data);
+    obj.schedulesArray.push(timestamp);
+    updateJsonFile(obj);
 
-        res.send("ok")
-    })
-} )
-})
+  });
+};
 
-app.get("/removeBuzzer", (req, res)=>{
+const updateTemperature = (temperature) => {
+  readFile("data.json", (err, data) => {
+    const obj = JSON.parse(data);
+    obj.currentTemp = temperature;
+    updateJsonFile(obj);
+  });
+};
 
-  readFile("data.json", (err, data)=>{
-    let obj = JSON.parse(data)
-    obj.buzzer = false
+const handleGet = (data, ws) => {
+  for (let i = 0; i < data.schedulesArray.length; i++) {
+    if (data.schedulesArray[i] < Math.floor(Date.now() / 1000)) {
+      data.isAirCondicionerOn = !data.isAirCondicionerOn;
+      data.schedulesArray.splice(i, 1);
+      updateJsonFile(data);
+      console.log("removed schedule: ", data.schedulesArray[i]);
+      console.log(data, "\n\n");
+    }
+  }
 
-    writeFile("data.json", JSON.stringify(obj), ()=>{
-      console.log("buzzer removido.")
+  data.time = new Date().toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "numeric",
+    minute: "numeric",
+  });
 
-        res.send("ok")
-    })
-} )
-})
+  ws.send(JSON.stringify(data));
+};
 
-app.get("/", (req,res)=>{
-  res.send("hello world!")
-})
+const handleEspGet = (data, ws) => {
+  for (let i = 0; i < data.schedulesArray.length; i++) {
+    if (data.schedulesArray[i] < Math.floor(Date.now() / 1000)) {
+      data.isAirCondicionerOn = !data.isAirCondicionerOn;
+      data.schedulesArray.splice(i, 1);
+      console.log("removed schedule: ", data.schedulesArray[i]);
+      console.log(data, "\n\n");
+    }
+  }
 
-const port = process.env.PORT || 3000;
-  
-  app.listen(port, () => {
-  console.log("Server is running on port 3000");
-});
+  data.lastEspUpdate = Math.floor(Date.now() / 1000);
+  updateJsonFile(data);
+
+  data.time = new Date().toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "numeric",
+    minute: "numeric",
+  });
+
+  ws.send(JSON.stringify(data));
+};
+
+const toggleBuzzer = () => {
+  readFile("data.json", (err, data) => {
+    const obj = JSON.parse(data);
+    obj.buzzer = !obj.buzzer;
+    updateJsonFile(obj);
+  });
+};

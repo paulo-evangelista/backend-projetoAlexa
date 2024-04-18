@@ -1,59 +1,88 @@
 import logo from "./logo.svg";
 import "./App.css";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Schedules from "./components/Schedules";
 import ScheduleForm from "./components/ScheduleForm";
 import LoadingOverlay from "./components/LoadingOverlay";
-import {LocalNotifications} from "@capacitor/local-notifications"
+import { LocalNotifications } from "@capacitor/local-notifications";
 
 function App() {
   const [temperature, setTemperature] = useState("--");
   const [ACState, setACState] = useState(false);
   const [schedulesArr, setSchedulesArr] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [lastEspUpdate, setLastEspUpdate] = useState(Date.now());
+  const [lastEspUpdateString, setLastEspUpdateString] = useState("--");
+  const ws = useRef(null);
 
-
-
-  const fetchData = async () => {
-    setIsUpdating(true);
-    const res = await axios.get("https://back-jdb0.onrender.com/getData");
-    // const res = await axios.get("http://localhost:3000/getData");
-    console.log(res.data);
-    setACState(res.data.isAirCondicionerOn);
-    setTemperature(res.data.currentTemp);
-    if (res.data.schedulesArray) {
-      setSchedulesArr(res.data.schedulesArray);
-    }
-    setIsUpdating(false);
-  };
-
-  const toggleAC = () => {
-    setIsUpdating(true);
-    axios.get("https://back-jdb0.onrender.com/toggleAC").then((res) => {
-      fetchData();
-    });
-  };
-
-  const toggleBuzzer = async () => {
-    setIsUpdating(true);
-    await axios.get("https://back-jdb0.onrender.com/createBuzzer")
-    setIsUpdating(false);
-  }
-
-  useEffect(async () => {
-    const res = await LocalNotifications.checkPermissions()
-    if(res.display != 'granted'){
-      await LocalNotifications.requestPermissions()
+  const setupNotifications = async () => {
+    const res = await LocalNotifications.checkPermissions();
+    if (res.display != "granted") {
+      await LocalNotifications.requestPermissions();
       await LocalNotifications.createChannel({
         id: "default",
         name: "High Priority Channel",
         description: "Canal para notificações importantes",
         importance: 5, // Máxima importância para notificações heads-up
         visibility: 1, // Visibilidade pública
-    });
+      });
     }
+  };
+
+  const toggleACState = () =>{
+    try {
+      if(ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send("SETAC");
+      setACState(!ACState);
+      }
+    } catch (error) {
+      console.log("erro");
+    }
+  }
+
+  const fetchData = () => {
+    setInterval(() => {
+      try {
+        if(ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send("GET");
+        }
+      } catch (error) {
+        console.log("erro");
+      }
+    }, 10000);
+  };
+
+
+  useEffect(()=>{
+    let timeDistante = Math.floor(Date.now()/1000) - lastEspUpdate;
+    if (timeDistante < 60) {
+      setLastEspUpdateString(`Agora (${timeDistante}s)`);
+    }
+  }, [lastEspUpdate])
+
+  useEffect(() => {
     fetchData();
+    setupNotifications();
+
+    ws.current = new WebSocket("wss://back-jdb0.onrender.com/");
+    ws.current.onopen = () => {
+      console.log("WebSocket opened");
+      setIsUpdating(false);
+    };
+    ws.current.onclose = () => {
+      setIsUpdating(true);
+    }
+    ws.current.onmessage = (message) => {
+      try {
+        const data = JSON.parse(message.data);
+          setACState(data.isAirCondicionerOn);
+          setLastEspUpdate(data.lastEspUpdate);
+      } catch (error) {}
+    };
+    return () => {
+      ws.current.close();
+    }
   }, []);
 
   return (
@@ -76,7 +105,7 @@ function App() {
         </p>
         {ACState ? (
           <button
-            onClick={toggleAC}
+            onClick={toggleACState}
             style={{
               borderRadius: "12px",
               border: "0",
@@ -91,7 +120,7 @@ function App() {
           </button>
         ) : (
           <button
-            onClick={toggleAC}
+            onClick={toggleACState}
             style={{
               borderRadius: "12px",
               border: "0",
@@ -106,7 +135,7 @@ function App() {
           </button>
         )}
         <button
-        onClick={toggleBuzzer}
+          onClick={() => {}}
           style={{
             display: "flex",
             borderRadius: "12px",
@@ -137,30 +166,19 @@ function App() {
           </svg>
           Tocar campainha
         </button>
-        <button
-          onClick={fetchData}
-          style={{
-            borderRadius: "12px",
-            marginTop: "30px",
-            marginBottom: "30px",
-            border: "0",
-            fontWeight: "",
-            fontSize: "20px",
-            padding: "10px 25px",
-            backgroundColor: "gray",
-            color: "white",
-          }}
-        >
-          Atualizar dados
-        </button>
+        <p>
+          Última atualização do ESP:
+          <br/>
+            {lastEspUpdateString}
+        </p>
         <ScheduleForm
           setIsUpdating={setIsUpdating}
-          fetchDataFunction={fetchData}
+          fetchDataFunction={() => {}}
         />
         <Schedules
           setIsUpdating={setIsUpdating}
           schedulesArray={schedulesArr}
-          fetchDataFunction={fetchData}
+          fetchDataFunction={() => {}}
         />
       </header>
     </div>
