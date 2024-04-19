@@ -6,6 +6,7 @@ import Schedules from "./components/Schedules";
 import ScheduleForm from "./components/ScheduleForm";
 import LoadingOverlay from "./components/LoadingOverlay";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 function App() {
   const [temperature, setTemperature] = useState("--");
@@ -30,6 +31,7 @@ function App() {
   };
 
   const toggleACState = () => {
+    Haptics.impact({ style: ImpactStyle.Heavy });
     try {
       if (ws.current.readyState === WebSocket.OPEN) {
         ws.current.send("SETAC");
@@ -54,6 +56,8 @@ function App() {
   };
 
   const sendNewSchedule = (timestamp) => {
+    Haptics.impact({ style: ImpactStyle.Heavy });
+
     try {
       if (ws.current.readyState === WebSocket.OPEN) {
         if (timestamp > 17134112910) {
@@ -69,6 +73,24 @@ function App() {
       console.log("erro");
     }
   };
+
+  const removeSchedule = (timestamp) => {
+    Haptics.impact({ style: ImpactStyle.Heavy });
+    try {
+      if (ws.current.readyState === WebSocket.OPEN) {
+        if (timestamp > 17134112910) {
+          console.log(
+            "Invalid timestamp, looks like its in miliseconds, not seconds"
+          );
+          return;
+        }
+
+        ws.current.send(`REMSCH-${timestamp}`);
+      }
+    } catch (error) {
+      console.log("erro");
+    }
+  }
 
   const makeLastEspUpdateString = (lastEspUpdate) => {
     let timeDistante = Math.floor(Date.now() / 1000) - lastEspUpdate;
@@ -199,7 +221,7 @@ function App() {
           schedulesArray={schedulesArr}
           sendNewScheduleFunction={sendNewSchedule}
         />
-        <Schedules schedulesArray={schedulesArr} />
+        <Schedules removeScheduleFunction={removeSchedule} schedulesArray={schedulesArr} />
       </header>
     </div>
   );

@@ -1,18 +1,7 @@
 // Exemplo com react-datepicker
-import React, { useState } from "react";
-import axios from "axios";
+import React from "react";
 
-function ScheduleForm({ schedulesArray, fetchDataFunction, setIsUpdating }) {
-
-    const handleRemoveSchedule = (timestamp) => {
-        setIsUpdating(true);
-        axios
-        .get(`https://back-jdb0.onrender.com/removeSchedule/${timestamp}`)
-        .then(() => {
-          fetchDataFunction();
-        })
-        .catch(()=>setIsUpdating(false))
-    }
+function ScheduleForm({ schedulesArray, removeScheduleFunction }) {
 
   return (
     <div>
@@ -40,7 +29,7 @@ function ScheduleForm({ schedulesArray, fetchDataFunction, setIsUpdating }) {
                 minute: "numeric",
             })}
             </div>
-            <div onClick={()=>{handleRemoveSchedule(schedule)}} style={{borderRadius: "100%", backgroundColor:"darkRed", padding: "5px 10px",margin:"0 10px 0 30px", fontWeight: "bold"}}>
+            <div onClick={()=>{removeScheduleFunction(schedule)}} style={{borderRadius: "100%", backgroundColor:"darkRed", padding: "5px 10px",margin:"0 10px 0 30px", fontWeight: "bold"}}>
 X
             </div>
         </div>
