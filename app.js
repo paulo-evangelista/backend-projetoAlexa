@@ -54,6 +54,11 @@ wss.on("connection", function connection(ws) {
         ws.send("schedule created for: " + parseInt(message.slice(7)));
         break;
 
+      case "REMSCH":
+        removeSchedule(parseInt(message.slice(7)));
+        ws.send("trying to remove " + parseInt(message.slice(7)));
+        break;
+
       case "SETBUZ":
         toggleBuzzer();
         break;
@@ -159,6 +164,17 @@ const handleEspGet = (data, ws) => {
   });
 
   ws.send(JSON.stringify(data));
+};
+
+const removeSchedule = (timestamp) => {
+  readFile("data.json", (err, data) => {
+    const obj = JSON.parse(data);
+    const index = obj.schedulesArray.indexOf(timestamp);
+    if (index > -1) {
+      obj.schedulesArray.splice(index, 1);
+      updateJsonFile(obj);
+    }
+  });
 };
 
 const toggleBuzzer = () => {
