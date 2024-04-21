@@ -19,7 +19,13 @@ wss.on("connection", function connection(ws) {
 
       case "ESPGET":
         readFile("data.json", (err, data) => {
-          handleEspGet(JSON.parse(data), ws);
+          try {
+            parsed = JSON.parse(data);
+            handleEspGet(parsed, ws);
+          } catch (error) {
+            console.error("Error on ESPGET: ", error);
+            console.error("data read on json file: ", data);
+          }
         });
         break;
 
