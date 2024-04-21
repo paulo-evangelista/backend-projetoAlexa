@@ -24,7 +24,7 @@ wss.on("connection", function connection(ws) {
             handleEspGet(parsed, ws);
           } catch (error) {
             console.error("Error on ESPGET: ", error);
-            console.error("data read on json file: ", data);
+            console.error("data read on json file: ", data.toString());
           }
         });
         break;
