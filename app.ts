@@ -1,32 +1,45 @@
 import WebSocket, { WebSocketServer } from "ws";
-import { readFile, writeFile } from "fs";
 
-// Inicializa um servidor WebSocket na porta 8080
-console.log("running on port: ", process.env.PORT || 8080);
-const wss = new WebSocketServer({ port: process.env.PORT || 8080 });
+interface IData {
+  isAirCondicionerOn: boolean;
+  currentTemp: number;
+  schedulesArray: number[];
+  buzzer: boolean;
+  lastEspUpdate: number;
+  currentTimeString: string;
+}
+
+let data: IData = {
+  isAirCondicionerOn: false,
+  currentTemp: 32,
+  schedulesArray: [],
+  buzzer: true,
+  lastEspUpdate: 1713316992,
+  currentTimeString: "",
+};
+
+const PORT = parseInt(process.env.PORT || "8080");
+
+console.log("running on port: ", PORT);
+const wss = new WebSocketServer({ port: PORT });
 
 wss.on("connection", function connection(ws) {
-  // Recebe mensagens do cliente
-  ws.on("message", function incoming(message) {
-    const cases = message.toString().slice(0, 6);
+  ws.on("message", function incoming(msg) {
+    const cases = msg.toString().slice(0, 6);
+    const message = msg.toString();
+
     switch (cases) {
-      // Quando o aplicativo pede os dados
       case "GET":
-        readFile("data.json", (err, data) => {
-          handleGet(JSON.parse(data), ws);
-        });
+        handleGet(ws);
         break;
 
       case "ESPGET":
-        readFile("data.json", (err, data) => {
-          try {
-            const parsed = JSON.parse(data);
-            handleEspGet(parsed, ws);
-          } catch (error) {
-            console.error("Error on ESPGET: ", error);
-            console.error("data read on json file: ", data.toString());
-          }
-        });
+        try {
+          handleEspGet(ws);
+        } catch (error) {
+          console.error("Error on ESPGET: ", error);
+          console.error("data read on json file: ", data);
+        }
         break;
 
       // Quando o ESP manda a temperatura atual
@@ -78,31 +91,15 @@ wss.on("connection", function connection(ws) {
   ws.send("success");
 });
 
-const updateJsonFile = (obj) => {
-  writeFile("data.json", JSON.stringify(obj), (err) => {
-    if (err) {
-      console.log(err);
-    }
-  });
-};
-
 const updateAC = () => {
-  readFile("data.json", (err, data) => {
-    const obj = JSON.parse(data);
-    obj.isAirCondicionerOn = !obj.isAirCondicionerOn;
-    updateJsonFile(obj);
-  });
+  data.isAirCondicionerOn = !data.isAirCondicionerOn;
 };
 
-const createScheduleBySeconds = (seconds) => {
-  readFile("data.json", (err, data) => {
-    const obj = JSON.parse(data);
-    obj.schedulesArray.push(Math.floor(Date.now() / 1000) + seconds);
-    updateJsonFile(obj);
-  });
+const createScheduleBySeconds = (seconds: number) => {
+  data.schedulesArray.push(Math.floor(Date.now() / 1000) + seconds);
 };
 
-const createScheduleByTimestamp = (timestamp) => {
+const createScheduleByTimestamp = (timestamp: number) => {
   // assure we have a timestamp of seconds, not miliseconds
   if (timestamp > 17134083450) {
     console.error(
@@ -115,33 +112,24 @@ const createScheduleByTimestamp = (timestamp) => {
     return;
   }
 
-  readFile("data.json", (err, data) => {
-    const obj = JSON.parse(data);
-    obj.schedulesArray.push(timestamp);
-    updateJsonFile(obj);
-  });
+  data.schedulesArray.push(timestamp);
 };
 
 const updateTemperature = (temperature) => {
-  readFile("data.json", (err, data) => {
-    const obj = JSON.parse(data);
-    obj.currentTemp = temperature;
-    updateJsonFile(obj);
-  });
+  data.currentTemp = temperature;
 };
 
-const handleGet = (data, ws) => {
+const handleGet = (ws: WebSocket) => {
   for (let i = 0; i < data.schedulesArray.length; i++) {
     if (data.schedulesArray[i] < Math.floor(Date.now() / 1000)) {
       data.isAirCondicionerOn = !data.isAirCondicionerOn;
       data.schedulesArray.splice(i, 1);
-      updateJsonFile(data);
       console.log("removed schedule: ", data.schedulesArray[i]);
       console.log(data, "\n\n");
     }
   }
 
-  data.time = new Date().toLocaleTimeString("pt-BR", {
+  data.currentTimeString = new Date().toLocaleTimeString("pt-BR", {
     timeZone: "America/Sao_Paulo",
     hour: "numeric",
     minute: "numeric",
@@ -150,7 +138,7 @@ const handleGet = (data, ws) => {
   ws.send(JSON.stringify(data));
 };
 
-const handleEspGet = (data, ws) => {
+const handleEspGet = (ws: WebSocket) => {
   for (let i = 0; i < data.schedulesArray.length; i++) {
     if (data.schedulesArray[i] < Math.floor(Date.now() / 1000)) {
       data.isAirCondicionerOn = !data.isAirCondicionerOn;
@@ -161,9 +149,7 @@ const handleEspGet = (data, ws) => {
   }
 
   data.lastEspUpdate = Math.floor(Date.now() / 1000);
-  updateJsonFile(data);
-
-  data.time = new Date().toLocaleTimeString("pt-BR", {
+  data.currentTimeString = new Date().toLocaleTimeString("pt-BR", {
     timeZone: "America/Sao_Paulo",
     hour: "numeric",
     minute: "numeric",
@@ -173,20 +159,12 @@ const handleEspGet = (data, ws) => {
 };
 
 const removeSchedule = (timestamp) => {
-  readFile("data.json", (err, data) => {
-    const obj = JSON.parse(data);
-    const index = obj.schedulesArray.indexOf(timestamp);
-    if (index > -1) {
-      obj.schedulesArray.splice(index, 1);
-      updateJsonFile(obj);
-    }
-  });
+  const index = data.schedulesArray.indexOf(timestamp);
+  if (index > -1) {
+    data.schedulesArray.splice(index, 1);
+  }
 };
 
 const toggleBuzzer = () => {
-  readFile("data.json", (err, data) => {
-    const obj = JSON.parse(data);
-    obj.buzzer = !obj.buzzer;
-    updateJsonFile(obj);
-  });
+  data.buzzer = !data.buzzer;
 };
