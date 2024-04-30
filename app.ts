@@ -6,7 +6,7 @@ interface IData {
   schedulesArray: number[];
   buzzer: boolean;
   lastEspUpdate: number;
-  currentTimeString: string;
+  time: string;
 }
 
 let data: IData = {
@@ -15,7 +15,7 @@ let data: IData = {
   schedulesArray: [],
   buzzer: true,
   lastEspUpdate: 1713316992,
-  currentTimeString: "",
+  time: "",
 };
 
 const PORT = parseInt(process.env.PORT || "8080");
@@ -129,7 +129,7 @@ const handleGet = (ws: WebSocket) => {
     }
   }
 
-  data.currentTimeString = new Date().toLocaleTimeString("pt-BR", {
+  data.time = new Date().toLocaleTimeString("pt-BR", {
     timeZone: "America/Sao_Paulo",
     hour: "numeric",
     minute: "numeric",
@@ -149,7 +149,7 @@ const handleEspGet = (ws: WebSocket) => {
   }
 
   data.lastEspUpdate = Math.floor(Date.now() / 1000);
-  data.currentTimeString = new Date().toLocaleTimeString("pt-BR", {
+  data.time = new Date().toLocaleTimeString("pt-BR", {
     timeZone: "America/Sao_Paulo",
     hour: "numeric",
     minute: "numeric",
