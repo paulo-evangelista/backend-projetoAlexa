@@ -82,10 +82,11 @@ wss.on("connection", function connection(ws) {
         toggleBuzzer();
         break;
 
-      // retorna o estado atual do ar condicionado
-      case "GETINI":
+      // retorna o estado atual do ar condicionado para sincronização
+      case "GETSYN":
         ws.send(
-          JSON.stringify({ isAirCondicionerOn: data.isAirCondicionerOn })
+          // O campo isSyncMessage é para o ESP saber que é uma mensagem de sincronização, e não um comando ( serve caso o ESP tenha se desconectado e perdido a sincronização do estado do ar condicionado)
+          JSON.stringify({ isAirCondicionerOn: data.isAirCondicionerOn, isSyncMessage: true})
         );
         break;
 
