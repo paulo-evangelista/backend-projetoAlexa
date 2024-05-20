@@ -82,6 +82,13 @@ wss.on("connection", function connection(ws) {
         toggleBuzzer();
         break;
 
+      // retorna o estado atual do ar condicionado
+      case "GETINI":
+        ws.send(
+          JSON.stringify({ isAirCondicionerOn: data.isAirCondicionerOn })
+        );
+        break;
+
       default:
         console.log("Invalida command:" + message);
     }
