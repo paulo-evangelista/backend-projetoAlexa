@@ -6,7 +6,7 @@ import Schedules from "./components/Schedules";
 import ScheduleForm from "./components/ScheduleForm";
 import LoadingOverlay from "./components/LoadingOverlay";
 import { LocalNotifications } from "@capacitor/local-notifications";
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
 function App() {
   const [temperature, setTemperature] = useState("--");
@@ -52,7 +52,11 @@ function App() {
       } catch (error) {
         console.log("erro");
       }
-    }, 5000);
+    }, 2000);
+  };
+
+  const tryToReconnect = () => {
+    ws.current = new WebSocket("wss://back-jdb0.onrender.com/");
   };
 
   const sendNewSchedule = (timestamp) => {
@@ -90,7 +94,7 @@ function App() {
     } catch (error) {
       console.log("erro");
     }
-  }
+  };
 
   const makeLastEspUpdateString = (lastEspUpdate) => {
     let timeDistante = Math.floor(Date.now() / 1000) - lastEspUpdate;
@@ -126,14 +130,11 @@ function App() {
         setSchedulesArr(data.schedulesArray);
       } catch (error) {}
     };
-    return () => {
-      ws.current.close();
-    };
   }, []);
 
   return (
     <div className="App">
-      {isUpdating ? <LoadingOverlay /> : null}
+      {isUpdating ? <LoadingOverlay tryToReconnectFn={tryToReconnect} /> : null}
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
@@ -221,7 +222,10 @@ function App() {
           schedulesArray={schedulesArr}
           sendNewScheduleFunction={sendNewSchedule}
         />
-        <Schedules removeScheduleFunction={removeSchedule} schedulesArray={schedulesArr} />
+        <Schedules
+          removeScheduleFunction={removeSchedule}
+          schedulesArray={schedulesArr}
+        />
       </header>
     </div>
   );

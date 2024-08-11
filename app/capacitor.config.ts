@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.app.myappd',
-  appName: 'Projeto Alexa',
+  appName: "Paulera's AC",
   webDir: 'build',
   server: {
     androidScheme: 'https'
